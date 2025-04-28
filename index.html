@@ -5,10 +5,9 @@
 <title>사물이름 암기 게임</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
 <style>
-  /* 스타일 그대로 유지 */
   body { font-family: 'Roboto', sans-serif; background: #f5f7fa; color: #333; text-align: center; margin: 20px; font-size: 200%; position: relative; overflow: hidden; }
   #background-logo { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.08; z-index: -1; width: 80%; max-width: 600px; }
-  #footer-text { position: fixed; bottom: 10px; right: 20px; font-size: 20px; color: #888; opacity: 0.3; z-index: -1; }
+  #footer-text { position: fixed; bottom: 10px; right: 20px; font-size: 28px; color: #444; opacity: 0.5; z-index: -1; }
   #countdown { font-size: 80px; color: #e74c3c; display: none; margin-top: 40px; }
   h1 { font-size: 64px; color: #2c3e50; margin-bottom: 20px; }
   #instruction { font-size: 40px; color: #34495e; margin-top: 20px; display: none; }
@@ -27,7 +26,7 @@
 <audio id="bg-music" src="https://cdn.pixabay.com/download/audio/2022/08/19/audio_419b57a04f.mp3?filename=relaxing-music-117489.mp3" loop></audio>
 
 <img id="background-logo" src="/mnt/data/386746f4-19de-45ce-b89b-339891da6fbf.png" alt="">
-<div id="footer-text">원주의료고등학교 국어기초방과후학교 프로그램</div>
+<div id="footer-text">원주의료고 기초국어 made by 종호샘</div>
 
 <h1>사물이름 암기 게임</h1>
 <div id="message">얘들아 준비 됐니? 가자!</div>
@@ -110,7 +109,9 @@ function startCountdown() {
 
 function startGame() {
   const bgMusic = document.getElementById('bg-music');
-  bgMusic.play();
+  bgMusic.play().catch(error => {
+    console.log('배경음악 자동재생 차단됨:', error);
+  });
 
   selectedWords = shuffleArray([...allWords]).slice(0, 20);
   const wordList = document.getElementById('wordList');
@@ -147,12 +148,22 @@ function submitAnswer() {
   document.getElementById('timer').style.display = 'none';
 }
 
-document.addEventListener('keydown', function(event) {
-  if (event.code === 'Space' && !isGameStarted) {
+function startInteraction() {
+  if (!isGameStarted) {
     document.getElementById('message').style.display = 'none';
     isGameStarted = true;
     startCountdown();
   }
+}
+
+document.addEventListener('keydown', function(event) {
+  if (event.code === 'Space') {
+    startInteraction();
+  }
+});
+
+document.addEventListener('touchstart', function(event) {
+  startInteraction();
 });
 </script>
 
