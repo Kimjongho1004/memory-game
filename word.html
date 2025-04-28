@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>사물이름 암기 게임</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+<style>
+  /* 스타일 그대로 유지 */
+  body { font-family: 'Roboto', sans-serif; background: #f5f7fa; color: #333; text-align: center; margin: 20px; font-size: 200%; position: relative; overflow: hidden; }
+  #background-logo { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.08; z-index: -1; width: 80%; max-width: 600px; }
+  #footer-text { position: fixed; bottom: 10px; right: 20px; font-size: 20px; color: #888; opacity: 0.3; z-index: -1; }
+  #countdown { font-size: 80px; color: #e74c3c; display: none; margin-top: 40px; }
+  h1 { font-size: 64px; color: #2c3e50; margin-bottom: 20px; }
+  #instruction { font-size: 40px; color: #34495e; margin-top: 20px; display: none; }
+  #message { font-size: 48px; color: #e67e22; margin-top: 100px; }
+  #wordList { font-size: 48px; margin: 20px auto; background: rgba(255, 255, 255, 0.8); border: 1px solid #ccc; padding: 20px; border-radius: 10px; width: 80%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); display: none; justify-content: center; }
+  .column { flex: 1; padding: 10px; text-align: left; }
+  #inputArea, #resultArea { margin-top: 30px; }
+  textarea { width: 80%; height: 200px; font-family: 'Roboto', sans-serif; font-size: 32px; background: rgba(255, 255, 255, 0.8); color: #333; border: 1px solid #ccc; padding: 10px; border-radius: 8px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+  button { margin-top: 20px; padding: 12px 30px; font-size: 32px; background-color: #3498db; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
+  button:hover { background-color: #2980b9; }
+  #timer { font-size: 64px; margin-top: 20px; color: #e74c3c; display: none; }
+</style>
+</head>
+<body>
+
+<audio id="bg-music" src="https://cdn.pixabay.com/download/audio/2022/08/19/audio_419b57a04f.mp3?filename=relaxing-music-117489.mp3" loop></audio>
+
+<img id="background-logo" src="/mnt/data/386746f4-19de-45ce-b89b-339891da6fbf.png" alt="">
+<div id="footer-text">원주의료고등학교 국어기초방과후학교 프로그램</div>
+
+<h1>사물이름 암기 게임</h1>
+<div id="message">얘들아 준비 됐니? 가자!</div>
+<div id="countdown"></div>
+<div id="instruction">20개 단어를 외우세요! (3분)</div>
+<div id="timer"></div>
+<div id="wordList"></div>
+<div id="inputArea" style="display:none;">
+  <textarea id="userInput" placeholder="여기에 외운 단어를 적어주세요..."></textarea><br>
+  <button onclick="submitAnswer()">제출하기</button>
+</div>
+<div id="resultArea"></div>
+
+<script>
+const allWords = [
+  "연필", "의자", "책상", "시계", "컵", "창문", "가방", "전화기", "거울", "모자",
+  "자전거", "구두", "냉장고", "텔레비전", "컴퓨터", "마우스", "모니터", "선풍기", "카메라", "식탁",
+  "볼펜", "커튼", "램프", "책장", "노트북", "배낭", "지갑", "열쇠", "청소기", "식기",
+  "헤드폰", "라디오", "전등", "손목시계", "벽걸이", "선반", "분무기", "젓가락", "도마", "수건",
+  "칫솔", "빗", "리모컨", "프린터", "가습기", "블라인드", "테이블", "쇼파", "스피커", "전기밥솥",
+  "책", "신문", "연구실", "학교", "강의실", "운동장", "서랍", "강아지", "고양이", "물병",
+  "휴대폰", "태블릿", "양말", "운동화", "신발장", "우산", "물컵", "물통", "커피잔", "접시",
+  "그릇", "식탁보", "수납장", "식칼", "포크", "스푼", "냄비", "프라이팬", "가위", "바구니",
+  "쌀통", "믹서기", "다리미", "세탁기", "건조기", "식기세척기", "전기주전자", "토스터", "빵칼",
+  "주전자", "도어락", "열쇠고리", "필통", "샤프", "지우개", "자", "칠판", "분필", "화이트보드"
+];
+
+let selectedWords = [];
+let timerInterval;
+let countdownInterval;
+let timeLeft;
+let isCountdownDone = false;
+let isGameStarted = false;
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function startTimer(duration, callback) {
+  clearInterval(timerInterval);
+  timeLeft = duration;
+  document.getElementById('timer').innerText = formatTime(timeLeft);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById('timer').innerText = formatTime(timeLeft);
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      callback();
+    }
+  }, 1000);
+}
+
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
+function startCountdown() {
+  let count = 3;
+  const countdownEl = document.getElementById('countdown');
+  countdownEl.innerText = count;
+  countdownEl.style.display = 'block';
+  countdownInterval = setInterval(() => {
+    count--;
+    if (count > 0) {
+      countdownEl.innerText = count;
+    } else {
+      clearInterval(countdownInterval);
+      countdownEl.style.display = 'none';
+      isCountdownDone = true;
+      startGame();
+    }
+  }, 1000);
+}
+
+function startGame() {
+  const bgMusic = document.getElementById('bg-music');
+  bgMusic.play();
+
+  selectedWords = shuffleArray([...allWords]).slice(0, 20);
+  const wordList = document.getElementById('wordList');
+  const leftWords = selectedWords.slice(0, 10).map((word, index) => `${index + 1}. ${word}`).join('<br>');
+  const rightWords = selectedWords.slice(10, 20).map((word, index) => `${index + 11}. ${word}`).join('<br>');
+
+  wordList.innerHTML = `<div class="column">${leftWords}</div><div class="column">${rightWords}</div>`;
+
+  document.getElementById('instruction').style.display = 'block';
+  document.getElementById('wordList').style.display = 'flex';
+  document.getElementById('timer').style.display = 'block';
+
+  startTimer(3 * 60, () => {
+    wordList.innerHTML = '';
+    document.getElementById('instruction').innerText = '기억나는 단어를 적어보세요! (3분)';
+    document.getElementById('inputArea').style.display = 'block';
+    startInputTimer();
+  });
+}
+
+function startInputTimer() {
+  startTimer(3 * 60, submitAnswer);
+}
+
+function submitAnswer() {
+  clearInterval(timerInterval);
+  const userInput = document.getElementById('userInput').value;
+  const userWords = userInput.split(/[\s,\n]+/);
+  const correctWords = selectedWords.filter(word => userWords.includes(word));
+
+  document.getElementById('resultArea').innerHTML = `<h2>결과</h2><p>총 ${correctWords.length}개 맞췄습니다!</p><p>맞춘 단어: ${correctWords.join(', ')}</p>`;
+
+  document.getElementById('inputArea').style.display = 'none';
+  document.getElementById('timer').style.display = 'none';
+}
+
+document.addEventListener('keydown', function(event) {
+  if (event.code === 'Space' && !isGameStarted) {
+    document.getElementById('message').style.display = 'none';
+    isGameStarted = true;
+    startCountdown();
+  }
+});
+</script>
+
+</body>
+</html>
