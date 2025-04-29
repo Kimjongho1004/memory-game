@@ -1,65 +1,118 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>사물이름 암기 게임</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-<style>
-  body { font-family: 'Roboto', sans-serif; background: #f5f7fa; color: #333; text-align: center; margin: 20px; font-size: 200%; position: relative; overflow: hidden; }
-  #background-logo { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.08; z-index: -1; width: 80%; max-width: 600px; }
-  #footer-text { position: fixed; bottom: 10px; right: 20px; font-size: 28px; color: #444; opacity: 0.5; z-index: -1; }
-  #countdown { font-size: 80px; color: #e74c3c; display: none; margin-top: 40px; }
-  h1 { font-size: 64px; color: #2c3e50; margin-bottom: 20px; }
-  #instruction { font-size: 40px; color: #34495e; margin-top: 20px; display: none; }
-  #message { font-size: 48px; color: #e67e22; margin-top: 100px; }
-  #wordList { font-size: 48px; margin: 20px auto; background: rgba(255, 255, 255, 0.8); border: 1px solid #ccc; padding: 20px; border-radius: 10px; width: 80%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); display: none; justify-content: center; }
-  .column { flex: 1; padding: 10px; text-align: left; }
-  #inputArea, #resultArea { margin-top: 30px; }
-  textarea { width: 80%; height: 200px; font-family: 'Roboto', sans-serif; font-size: 32px; background: rgba(255, 255, 255, 0.8); color: #333; border: 1px solid #ccc; padding: 10px; border-radius: 8px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
-  button { margin-top: 20px; padding: 12px 30px; font-size: 32px; background-color: #3498db; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
-  button:hover { background-color: #2980b9; }
-  #timer { font-size: 64px; margin-top: 20px; color: #e74c3c; display: none; }
-</style>
+  <meta charset="UTF-8" />
+  <title>사물이름 암기 게임</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      text-align: center;
+      background: linear-gradient(135deg, #c3ecb2 0%, #7dd3fc 100%);
+      font-family: 'Roboto', sans-serif;
+    }
+    .column {
+      flex: 1;
+      text-align: left;
+      white-space: pre;
+      font-size: 24px;
+      line-height: 1.8;
+    }
+    #wordList {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 80px;
+    }
+    #inputArea, #resultArea {
+      margin-top: 20px;
+    }
+    #restartButton {
+      margin-top: 20px;
+      padding: 12px 24px;
+      font-size: 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease;
+    }
+    #restartButton:hover {
+      background-color: #45a049;
+    }
+    input#userInput {
+      padding: 10px;
+      font-size: 18px;
+      width: 300px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+  </style>
 </head>
 <body>
 
-<audio id="bg-music" src="https://cdn.pixabay.com/download/audio/2022/08/19/audio_419b57a04f.mp3?filename=relaxing-music-117489.mp3" loop></audio>
-
-<img id="background-logo" src="/mnt/data/386746f4-19de-45ce-b89b-339891da6fbf.png" alt="">
-<div id="footer-text">원주의료고 기초국어 made by 종호샘</div>
-
 <h1>사물이름 암기 게임</h1>
-<div id="message">얘들아 준비 됐니? 가자!</div>
+<div id="message">얘들아 준비 됐니? 가자! (화면을 터치하세요)</div>
 <div id="countdown"></div>
-<div id="instruction">20개 단어를 외우세요! (3분)</div>
+<div id="instruction" style="display:none;">20개 단어를 외우세요! (3분)</div>
 <div id="timer"></div>
 <div id="wordList"></div>
+
 <div id="inputArea" style="display:none;">
-  <textarea id="userInput" placeholder="여기에 외운 단어를 적어주세요..."></textarea><br>
-  <button onclick="submitAnswer()">제출하기</button>
+  <input id="userInput" type="text" placeholder="단어를 입력하세요" autocomplete="off" />
+  <div id="feedback"></div>
+  <div id="correctCount">맞춘 개수: 0개</div>
 </div>
+
 <div id="resultArea"></div>
+<button id="restartButton" style="display:none;" onclick="location.reload()">다시 시작하기</button>
 
 <script>
 const allWords = [
-  "연필", "의자", "책상", "시계", "컵", "창문", "가방", "전화기", "거울", "모자",
-  "자전거", "구두", "냉장고", "텔레비전", "컴퓨터", "마우스", "모니터", "선풍기", "카메라", "식탁",
-  "볼펜", "커튼", "램프", "책장", "노트북", "배낭", "지갑", "열쇠", "청소기", "식기",
-  "헤드폰", "라디오", "전등", "손목시계", "벽걸이", "선반", "분무기", "젓가락", "도마", "수건",
-  "칫솔", "빗", "리모컨", "프린터", "가습기", "블라인드", "테이블", "쇼파", "스피커", "전기밥솥",
-  "책", "신문", "연구실", "학교", "강의실", "운동장", "서랍", "강아지", "고양이", "물병",
-  "휴대폰", "태블릿", "양말", "운동화", "신발장", "우산", "물컵", "물통", "커피잔", "접시",
-  "그릇", "식탁보", "수납장", "식칼", "포크", "스푼", "냄비", "프라이팬", "가위", "바구니",
-  "쌀통", "믹서기", "다리미", "세탁기", "건조기", "식기세척기", "전기주전자", "토스터", "빵칼",
-  "주전자", "도어락", "열쇠고리", "필통", "샤프", "지우개", "자", "칠판", "분필", "화이트보드"
+  "의료고", "성실관", "입지관", "창조관", "건등관", "문막읍", "소통실", "공감실", "우공실",
+  "전화기", "연필", "냉장고", "컴퓨터", "젓가락", "수건", "노트북", "카메라", "식탁", "분무기",
+  "볼펜", "창문", "도마", "시계", "열쇠", "자전거", "책상", "모자", "식기", "지갑",
+  "원주시", "마이스터", "기계", "전자", "바이오", "안경", "시계", "초콜릿", "가위", "시간표",
+  "급식실", "색연필", "클립", "눈사람", "체육복", "음료수", "담라", "국어", "기초", "스마트퐅"
 ];
 
 let selectedWords = [];
+let correctWordsSet = new Set();
 let timerInterval;
-let countdownInterval;
-let timeLeft;
-let isCountdownDone = false;
 let isGameStarted = false;
+
+function launchConfetti() {
+  const duration = 3000;
+  const end = Date.now() + duration;
+  (function frame() {
+    confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } });
+    confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } });
+    if (Date.now() < end) requestAnimationFrame(frame);
+  })();
+}
+
+function endGame(perfect) {
+  clearInterval(timerInterval);
+  document.getElementById('timer').style.display = 'none';
+  document.getElementById('inputArea').style.display = 'none';
+  document.getElementById('restartButton').style.display = 'block';
+  const resultList = Array.from(correctWordsSet).join(', ');
+  if (perfect) {
+    document.getElementById('resultArea').innerHTML = '<h2 style="font-size:80px;color:green;">만점입니다!</h2><p>맞춘 단어: ' + resultList + '</p>';
+    launchConfetti();
+  } else {
+    document.getElementById('resultArea').innerHTML = `<h2>총 맞춘 개수: ${correctWordsSet.size}개</h2><p>맞춘 단어: ${resultList}</p>`;
+  }
+}
 
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -69,9 +122,14 @@ function shuffleArray(array) {
   return array;
 }
 
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
 function startTimer(duration, callback) {
-  clearInterval(timerInterval);
-  timeLeft = duration;
+  let timeLeft = duration;
   document.getElementById('timer').innerText = formatTime(timeLeft);
   timerInterval = setInterval(() => {
     timeLeft--;
@@ -83,70 +141,61 @@ function startTimer(duration, callback) {
   }, 1000);
 }
 
-function formatTime(seconds) {
-  const minutes = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-}
-
 function startCountdown() {
   let count = 3;
   const countdownEl = document.getElementById('countdown');
   countdownEl.innerText = count;
   countdownEl.style.display = 'block';
-  countdownInterval = setInterval(() => {
+  const countdownInterval = setInterval(() => {
     count--;
     if (count > 0) {
       countdownEl.innerText = count;
     } else {
       clearInterval(countdownInterval);
       countdownEl.style.display = 'none';
-      isCountdownDone = true;
       startGame();
     }
   }, 1000);
 }
 
 function startGame() {
-  const bgMusic = document.getElementById('bg-music');
-  bgMusic.play().catch(error => {
-    console.log('배경음악 자동재생 차단됨:', error);
-  });
-
   selectedWords = shuffleArray([...allWords]).slice(0, 20);
-  const wordList = document.getElementById('wordList');
-  const leftWords = selectedWords.slice(0, 10).map((word, index) => `${index + 1}. ${word}`).join('<br>');
-  const rightWords = selectedWords.slice(10, 20).map((word, index) => `${index + 11}. ${word}`).join('<br>');
-
-  wordList.innerHTML = `<div class="column">${leftWords}</div><div class="column">${rightWords}</div>`;
-
+  const leftWords = selectedWords.slice(0, 10).map((word, i) => `${i + 1}. ${word}`).join('<br>');
+  const rightWords = selectedWords.slice(10, 20).map((word, i) => `${i + 11}. ${word}`).join('<br>');
+  document.getElementById('wordList').innerHTML = `<div class="column">${leftWords}</div><div class="column">${rightWords}</div>`;
   document.getElementById('instruction').style.display = 'block';
   document.getElementById('wordList').style.display = 'flex';
   document.getElementById('timer').style.display = 'block';
-
-  startTimer(3 * 60, () => {
-    wordList.innerHTML = '';
-    document.getElementById('instruction').innerText = '기억나는 단어를 적어보세요! (3분)';
-    document.getElementById('inputArea').style.display = 'block';
-    startInputTimer();
-  });
+  startTimer(180, showInputArea);
 }
 
-function startInputTimer() {
-  startTimer(3 * 60, submitAnswer);
+function showInputArea() {
+  document.getElementById('wordList').style.display = 'none';
+  document.getElementById('instruction').innerText = '기억나는 단어를 입력하세요!';
+  document.getElementById('inputArea').style.display = 'block';
+  startTimer(180, () => endGame(false));
 }
 
-function submitAnswer() {
-  clearInterval(timerInterval);
-  const userInput = document.getElementById('userInput').value;
-  const userWords = userInput.split(/[\s,\n]+/);
-  const correctWords = selectedWords.filter(word => userWords.includes(word));
+document.getElementById('userInput').addEventListener('input', function () {
+  const inputWord = this.value.trim();
+  const feedbackEl = document.getElementById('feedback');
+  const correctCountEl = document.getElementById('correctCount');
 
-  document.getElementById('resultArea').innerHTML = `<h2>결과</h2><p>총 ${correctWords.length}개 맞췄습니다!</p><p>맞춘 단어: ${correctWords.join(', ')}</p>`;
+  if (selectedWords.includes(inputWord) && !correctWordsSet.has(inputWord)) {
+    feedbackEl.innerText = '맞아요!';
+    correctWordsSet.add(inputWord);
+    correctCountEl.innerText = `맞춘 개수: ${correctWordsSet.size}개`;
+    this.value = '';
+    if (correctWordsSet.size === 20) {
+      endGame(true);
+    }
+  } else {
+    feedbackEl.innerText = '';
+  }
+});
 
-  document.getElementById('inputArea').style.display = 'none';
-  document.getElementById('timer').style.display = 'none';
-}
+document.addEventListener('click', startInteraction);
+document.addEventListener('touchstart', startInteraction);
 
 function startInteraction() {
   if (!isGameStarted) {
@@ -155,16 +204,6 @@ function startInteraction() {
     startCountdown();
   }
 }
-
-document.addEventListener('keydown', function(event) {
-  if (event.code === 'Space') {
-    startInteraction();
-  }
-});
-
-document.addEventListener('touchstart', function(event) {
-  startInteraction();
-});
 </script>
 
 </body>
